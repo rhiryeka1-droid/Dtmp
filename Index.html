@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LIST DT - SITE DBK</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    fontSize: {
+                        'xxs': ['10px', '14px'],
+                        'xs-compact': ['11.5px', '15px'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar super tipis agar tidak mengganggu tampilan mobile */
+        ::-webkit-scrollbar {
+            width: 3px;
+            height: 3px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 9999px;
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: contain;
+        }
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-amber-500/30 selection:text-amber-200">
+
+    <!-- Container Utama Mobile-First -->
+    <div class="max-w-md mx-auto min-h-screen flex flex-col bg-slate-900 border-x border-slate-800/80 shadow-2xl relative">
+
+        <!-- Sticky Top Header -->
+        <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-3 pt-2.5 pb-2 shadow-sm">
+            <!-- Judul & Indikator Koneksi Online -->
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                        <i data-lucide="truck" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-sm font-extrabold tracking-tight text-white leading-none">LIST DT - SITE DBK</h1>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span id="syncDot" class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            <span id="syncText" class="text-[10px] text-slate-400 font-medium">Menghubungkan...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tombol Input Unit Baru -->
+                <button onclick="openAddModal()" class="flex items-center gap-1 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-[11px] px-2.5 py-1.5 rounded-lg shadow transition-all">
+                    <i data-lucide="plus" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+                    <span>Input Unit</span>
+                </button>
+            </div>
+
+            <!-- Ringkasan Statistik (Total / Ready / BD) -->
+            <div class="grid grid-cols-3 gap-1.5 mb-2">
+                <button onclick="setFilterStatus('ALL')" id="card-ALL" class="stat-card flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-slate-800/90 border border-slate-700/80 transition-all text-left ring-1 ring-amber-500/60">
+                    <div>
+                        <div class="text-[9.5px] uppercase tracking-wider text-slate-400 font-semibold">Total</div>
+                        <div id="countTotal" class="text-sm font-extrabold text-white tabular-nums leading-tight">0</div>
+                    </div>
+                    <i data-lucide="layers" class="w-3.5 h-3.5 text-slate-400"></i>
+                </button>
+
+                <button onclick="setFilterStatus('READY')" id="card-READY" class="stat-card flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-800/50 transition-all text-left">
+                    <div>
+                        <div class="text-[9.5px] uppercase tracking-wider text-emerald-400 font-semibold">Ready</div>
+                        <div id="countReady" class="text-sm font-extrabold text-emerald-400 tabular-nums leading-tight">0</div>
+                    </div>
+                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500"></i>
+                </button>
+
+                <button onclick="setFilterStatus('BD')" id="card-BD" class="stat-card flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-rose-950/40 border border-rose-800/50 transition-all text-left">
+                    <div>
+                        <div class="text-[9.5px] uppercase tracking-wider text-rose-400 font-semibold">Breakdown</div>
+                        <div id="countBD" class="text-sm font-extrabold text-rose-400 tabular-nums leading-tight">0</div>
+                    </div>
+                    <i data-lucide="wrench" class="w-3.5 h-3.5 text-rose-500"></i>
+                </button>
+            </div>
+
+            <!-- Baris Pencarian & Tab Navigasi -->
+            <div class="flex items-center gap-1.5">
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                    <input type="text" id="searchInput" oninput="renderList()" placeholder="Cari nomor DT / kerusakan..." class="w-full bg-slate-950/90 border border-slate-800 focus:border-amber-500/70 rounded-lg pl-8 pr-7 py-1 text-xs-compact text-slate-100 placeholder-slate-500 focus:outline-none transition-colors">
+                    <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+
+                <!-- Switch Tab: Daftar Unit vs Salin Laporan -->
+                <div class="flex bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0">
+                    <button onclick="switchTab('list')" id="tabBtnList" class="px-2 py-1 rounded-md text-[11px] font-semibold bg-slate-800 text-amber-400 transition-all">
+                        Daftar
+                    </button>
+                    <button onclick="switchTab('copy')" id="tabBtnCopy" class="px-2 py-1 rounded-md text-[11px] font-semibold text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1">
+                        <i data-lucide="copy" class="w-3 h-3"></i>
+                        <span>Salin</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- KONTEN UTAMA -->
+        <main class="flex-1 flex flex-col">
+
+            <!-- TAB 1: DAFTAR UNIT COMPACT -->
+            <section id="viewList" class="flex-1 flex flex-col">
+                <!-- Header Kolom Tabel -->
+                <div class="grid grid-cols-12 items-center px-2.5 py-1 bg-slate-950/70 border-b border-slate-800/90 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
+                    <div class="col-span-1 text-center">#</div>
+                    <div class="col-span-6 pl-1">Unit & Keterangan</div>
+                    <div class="col-span-4 text-center">Set Status</div>
+                    <div class="col-span-1 text-right">Hps</div>
+                </div>
+
+                <!-- Container Baris Unit -->
+                <div id="unitListContainer" class="divide-y divide-slate-800/60 flex-1">
+                    <!-- Loading Skeleton -->
+                    <div class="p-6 text-center text-xs text-slate-400 flex flex-col items-center gap-2">
+                        <div class="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span>Memuat data unit online...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: KOLOM SALIN KE CLIPBOARD (WHATSAPP REPORT) -->
+            <section id="viewCopy" class="hidden p-3 space-y-3 flex-1">
+                <!-- Tombol Salin Cepat -->
+                <div class="bg-slate-800/60 border border-slate-700/80 rounded-xl p-2.5">
+                    <div class="text-[11px] font-bold text-slate-300 mb-2 flex items-center justify-between">
+                        <span>Salin Otomatis ke Clipboard:</span>
+                        <span class="text-[10px] text-amber-400 font-normal">Siap paste ke WhatsApp</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button onclick="copyReport('ALL')" class="flex flex-col items-center justify-center gap-1 py-2 px-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-[11px] shadow transition-all">
+                            <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                            <span>Salin Semua</span>
+                        </button>
+                        <button onclick="copyReport('READY')" class="flex flex-col items-center justify-center gap-1 py-2 px-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-[11px] shadow transition-all">
+                            <i data-lucide="check-square" class="w-4 h-4"></i>
+                            <span>Salin Ready</span>
+                        </button>
+                        <button onclick="copyReport('BD')" class="flex flex-col items-center justify-center gap-1 py-2 px-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold text-[11px] shadow transition-all">
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            <span>Salin BD</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Kolom Teks Unit Ready -->
+                <div class="bg-slate-950 border border-emerald-900/60 rounded-xl overflow-hidden">
+                    <div class="flex items-center justify-between px-2.5 py-1.5 bg-emerald-950/40 border-b border-emerald-900/50">
+                        <span class="text-[11px] font-bold text-emerald-400 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            KOLOM UNIT READY (<span id="copyReadyCount">0</span>)
+                        </span>
+                        <button onclick="copyReport('READY')" class="text-[10.5px] font-semibold bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-600/40 px-2 py-0.5 rounded flex items-center gap-1 active:scale-95 transition-all">
+                            <i data-lucide="copy" class="w-3 h-3"></i> Salin Ready
+                        </button>
+                    </div>
+                    <textarea id="textReadyBox" readonly rows="6" class="w-full bg-transparent p-2.5 text-[11px] font-mono text-slate-200 focus:outline-none resize-y leading-relaxed"></textarea>
+                </div>
+
+                <!-- Kolom Teks Unit Breakdown -->
+                <div class="bg-slate-950 border border-rose-900/60 rounded-xl overflow-hidden">
+                    <div class="flex items-center justify-between px-2.5 py-1.5 bg-rose-950/40 border-b border-rose-900/50">
+                        <span class="text-[11px] font-bold text-rose-400 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                            KOLOM UNIT BREAKDOWN (<span id="copyBdCount">0</span>)
+                        </span>
+                        <button onclick="copyReport('BD')" class="text-[10.5px] font-semibold bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 border border-rose-600/40 px-2 py-0.5 rounded flex items-center gap-1 active:scale-95 transition-all">
+                            <i data-lucide="copy" class="w-3 h-3"></i> Salin BD
+                        </button>
+                    </div>
+                    <textarea id="textBdBox" readonly rows="6" class="w-full bg-transparent p-2.5 text-[11px] font-mono text-slate-200 focus:outline-none resize-y leading-relaxed"></textarea>
+                </div>
+
+                <!-- Kolom Gabungan Lengkap -->
+                <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+                    <div class="flex items-center justify-between px-2.5 py-1.5 bg-slate-900 border-b border-slate-800">
+                        <span class="text-[11px] font-bold text-amber-400">FORMAT GABUNGAN LENGKAP (WA)</span>
+                        <button onclick="copyReport('ALL')" class="text-[10.5px] font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded flex items-center gap-1 active:scale-95 transition-all">
+                            <i data-lucide="copy" class="w-3 h-3"></i> Salin Semua
+                        </button>
+                    </div>
+                    <textarea id="textAllBox" readonly rows="8" class="w-full bg-transparent p-2.5 text-[11px] font-mono text-slate-300 focus:outline-none resize-y leading-relaxed"></textarea>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Sticky Bottom Quick Action Bar (Saat di Tab Daftar) -->
+        <footer id="bottomQuickBar" class="sticky bottom-0 z-20 bg-slate-900/95 backdrop-blur border-t border-slate-800 px-2.5 py-1.5 flex items-center justify-between gap-1.5">
+            <button onclick="copyReport('READY')" class="flex-1 py-1.5 px-2 rounded-lg bg-emerald-950/80 hover:bg-emerald-900/80 border border-emerald-700/60 text-emerald-300 text-[11px] font-semibold flex items-center justify-center gap-1 active:scale-95 transition-all">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span>Salin Ready</span>
+            </button>
+            <button onclick="copyReport('BD')" class="flex-1 py-1.5 px-2 rounded-lg bg-rose-950/80 hover:bg-rose-900/80 border border-rose-700/60 text-rose-300 text-[11px] font-semibold flex items-center justify-center gap-1 active:scale-95 transition-all">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span>Salin BD</span>
+            </button>
+            <button onclick="copyReport('ALL')" class="flex-1 py-1.5 px-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-bold flex items-center justify-center gap-1 active:scale-95 transition-all shadow">
+                <i data-lucide="share-2" class="w-3 h-3"></i>
+                <span>Salin Semua</span>
+            </button>
+        </footer>
+
+    </div>
+
+    <!-- MODAL 1: INPUT UNIT BARU -->
+    <div id="addModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-3">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-bold text-white flex items-center gap-1.5">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-amber-400"></i>
+                    <span>Tambah Unit Baru</span>
+                </h2>
+                <button onclick="closeAddModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="addUnitForm" onsubmit="handleAddUnit(event)" class="space-y-3">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Nomor / Nama Unit</label>
+                    <input type="text" id="newUnitName" required placeholder="Contoh: DT 045 atau DT Howo 120" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none">
+                    <p class="text-[10px] text-slate-400 mt-1">Otomatis diurutkan berdasarkan nomor terkecil.</p>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Status Awal</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="newUnitStatus" value="READY" checked onchange="toggleNewNoteField()" class="peer sr-only">
+                            <div class="text-center py-1.5 px-2 rounded-lg border border-slate-700 bg-slate-950 text-slate-400 text-xs font-bold peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-500 transition-all">
+                                READY
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="newUnitStatus" value="BD" onchange="toggleNewNoteField()" class="peer sr-only">
+                            <div class="text-center py-1.5 px-2 rounded-lg border border-slate-700 bg-slate-950 text-slate-400 text-xs font-bold peer-checked:bg-rose-600 peer-checked:text-white peer-checked:border-rose-500 transition-all">
+                                BREAKDOWN (BD)
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="newNoteWrapper" class="hidden">
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Keterangan Kerusakan</label>
+                    <input type="text" id="newUnitNote" placeholder="Contoh: Tyre, Disc Clutch, AC mati..." class="w-full bg-slate-950 border border-slate-700 focus:border-rose-500 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none">
+                </div>
+
+                <div class="flex items-center gap-2 pt-1">
+                    <button type="button" onclick="closeAddModal()" class="flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Batal</button>
+                    <button type="submit" id="saveAddBtn" class="flex-1 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow">Simpan Unit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: SET BREAKDOWN (ISI KETERANGAN KERUSAKAN) -->
+    <div id="bdModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-3">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-4 shadow-2xl">
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="text-sm font-bold text-rose-400 flex items-center gap-1.5">
+                    <i data-lucide="wrench" class="w-4 h-4"></i>
+                    <span>Set Breakdown: <span id="bdModalUnitName" class="text-white"></span></span>
+                </h2>
+                <button onclick="closeBdModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form onsubmit="confirmSetBreakdown(event)" class="space-y-3">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Keterangan Kerusakan / Problem</label>
+                    <input type="text" id="bdNoteInput" required placeholder="Ketik problem unit (misal: Tyre)..." class="w-full bg-slate-950 border border-slate-700 focus:border-rose-500 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none">
+                    
+                    <!-- Quick Chips Problem Umum -->
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                        <button type="button" onclick="setQuickBdNote('Tyre')" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Tyre</button>
+                        <button type="button" onclick="setQuickBdNote('Engine')" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Engine</button>
+                        <button type="button" onclick="setQuickBdNote('Disc Clutch')" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Disc Clutch</button>
+                        <button type="button" onclick="setQuickBdNote('AC mati')" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">AC mati</button>
+                        <button type="button" onclick="setQuickBdNote('Hydraulic')" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Hydraulic</button>
+                        <button type="button" onclick="setQuickBdNote('Electrical')" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Electrical</button>
+                        <button type="button" onclick="setQuickBdNote('Service / PM')" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Service / PM</button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 pt-1">
+                    <button type="button" onclick="closeBdModal()" class="flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Batal</button>
+                    <button type="submit" class="flex-1 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow">Simpan BD</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: KONFIRMASI HAPUS UNIT -->
+    <div id="deleteModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xs p-4 shadow-2xl text-center">
+            <div class="w-10 h-10 rounded-full bg-rose-500/15 text-rose-400 flex items-center justify-center mx-auto mb-2.5">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-sm font-bold text-white">Hapus Unit?</h3>
+            <p class="text-xs text-slate-400 mt-1">Unit <strong id="deleteModalUnitName" class="text-slate-200"></strong> akan dihapus permanen dari database online.</p>
+            <div class="flex items-center gap-2 mt-4">
+                <button onclick="closeDeleteModal()" class="flex-1 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Batal</button>
+                <button onclick="confirmDeleteUnit()" class="flex-1 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-200 transform -translate-y-2">
+        <div class="bg-slate-800 border border-slate-600 text-white text-xs font-semibold px-3.5 py-2 rounded-full shadow-xl flex items-center gap-2">
+            <i id="toastIcon" data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span id="toastMsg">Berhasil disalin!</span>
+        </div>
+    </div>
+
+    <!-- FIREBASE & APPLICATION LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Konfigurasi Firebase dari environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'dt-site-dbk-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+
+        // Data Awal 57 Unit DT Site DBK (Untuk Seed Pertama Kali jika DB Kosong)
+        const INITIAL_UNITS = [
+            // Ready (46 Unit)
+            { name: "DT 008", status: "READY", note: "" },
+            { name: "DT 010", status: "READY", note: "" },
+            { name: "DT 020", status: "READY", note: "" },
+            { name: "DT 021", status: "READY", note: "" },
+            { name: "DT 023", status: "READY", note: "" },
+            { name: "DT 028", status: "READY", note: "" },
+            { name: "DT 036", status: "READY", note: "" },
+            { name: "DT 038", status: "READY", note: "" },
+            { name: "DT 056", status: "READY", note: "" },
+            { name: "DT Howo 065", status: "READY", note: "" },
+            { name: "DT 070", status: "READY", note: "" },
+            { name: "DT 100", status: "READY", note: "" },
+            { name: "DT 101", status: "READY", note: "" },
+            { name: "DT 112", status: "READY", note: "" },
+            { name: "DT 113", status: "READY", note: "" },
+            { name: "DT Howo 118", status: "READY", note: "" },
+            { name: "DT 122", status: "READY", note: "" },
+            { name: "DT 133", status: "READY", note: "" },
+            { name: "DT 135", status: "READY", note: "" },
+            { name: "DT 138", status: "READY", note: "" },
+            { name: "DT 151", status: "READY", note: "" },
+            { name: "DT 152", status: "READY", note: "" },
+            { name: "DT 155", status: "READY", note: "" },
+            { name: "DT 157", status: "READY", note: "" },
+            { name: "DT 161", status: "READY", note: "" },
+            { name: "DT 166", status: "READY", note: "" },
+            { name: "DT 168", status: "READY", note: "" },
+            { name: "DT 171", status: "READY", note: "" },
+            { name: "DT 176", status: "READY", note: "" },
+            { name: "DT 202", status: "READY", note: "" },
+            { name: "DT 203", status: "READY", note: "" },
+            { name: "DT 215", status: "READY", note: "" },
+            { name: "DT 218", status: "READY", note: "" },
+            { name: "DT 236", status: "READY", note: "" },
+            { name: "DT 237", status: "READY", note: "" },
+            { name: "DT 238", status: "READY", note: "" },
+            { name: "DT 252", status: "READY", note: "" },
+            { name: "DT 268", status: "READY", note: "" },
+            { name: "DT 270", status: "READY", note: "" },
+            { name: "DT 271", status: "READY", note: "" },
+            { name: "DT 272", status: "READY", note: "" },
+            { name: "DT 303", status: "READY", note: "" },
+            { name: "DT 308", status: "READY", note: "" },
+            { name: "DT 313", status: "READY", note: "" },
+            { name: "DT 315", status: "READY", note: "" },
+            { name: "DT 317", status: "READY", note: "" },
+            // Breakdown (11 Unit)
+            { name: "DT 001", status: "BD", note: "Tyre" },
+            { name: "DT 018", status: "BD", note: "Tyre" },
+            { name: "DT 063", status: "BD", note: "Disc Clutch" },
+            { name: "DT 127", status: "BD", note: "Tyre" },
+            { name: "DT 130", status: "BD", note: "AC mati" },
+            { name: "DT 156", status: "BD", note: "Tyre" },
+            { name: "DT 177", status: "BD", note: "Tyre" },
+            { name: "DT 178", status: "BD", note: "Tyre" },
+            { name: "DT 182", status: "BD", note: "Tyre" },
+            { name: "DT 263", status: "BD", note: "Tyre" },
+            { name: "DT 306", status: "BD", note: "Tyre" }
+        ];
+
+        // State Aplikasi
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        let unitsData = [];
+        let filterStatus = 'ALL'; // 'ALL' | 'READY' | 'BD'
+        let activeTab = 'list'; // 'list' | 'copy'
+        let selectedUnitForBd = null;
+        let selectedUnitForDelete = null;
+        let isSeeding = false;
+
+        // Fungsi Ekstrak Angka dari Nama Unit untuk Pengurutan Otomatis
+        function extractUnitNumber(name) {
+            const match = String(name).match(/(\d+)/);
+            return match ? parseInt(match[1], 10) : 999999;
+        }
+
+        // Fungsi Sort Otomatis dari Nomor Terkecil
+        function sortUnits(list) {
+            return [...list].sort((a, b) => {
+                const numA = extractUnitNumber(a.name);
+                const numB = extractUnitNumber(b.name);
+                if (numA !== numB) return numA - numB;
+                return a.name.localeCompare(b.name);
+            });
+        }
+
+        // Update Indikator Status Online
+        function setConnectionStatus(online, text) {
+            const dot = document.getElementById('syncDot');
+            const label = document.getElementById('syncText');
+            label.textContent = text;
+            if (online) {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]';
+            } else {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse';
+            }
+        }
+
+        // Inisialisasi Firebase & Auth
+        async function initApp() {
+            lucide.createIcons();
+
+            if (!firebaseConfig) {
+                // Fallback jika dijalankan di luar environment Firebase
+                unitsData = sortUnits(INITIAL_UNITS.map((u, idx) => ({ id: 'local-' + idx, ...u })));
+                setConnectionStatus(false, 'Mode Offline (Preview)');
+                updateUI();
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Rule 3: Auth sebelum query
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                currentUser = auth.currentUser;
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                });
+
+                if (currentUser) {
+                    await startRealtimeListener();
+                }
+            } catch (err) {
+                console.error("Firebase init error:", err);
+                setConnectionStatus(false, 'Gagal terhubung ke server');
+                showToast('Gagal memuat database online', 'error');
+            }
+        }
+
+        // Listener Real-Time Firestore (Public Collection agar bisa diupdate siapa saja)
+        async function startRealtimeListener() {
+            if (!db || !currentUser) return;
+
+            // Rule 1: Strict Path untuk public collaborative data
+            const unitsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'dt_units');
+
+            // Cek apakah koleksi kosong, jika kosong lakukan seed 57 unit awal
+            try {
+                const initialSnap = await getDocs(unitsColRef);
+                if (initialSnap.empty && !isSeeding) {
+                    isSeeding = true;
+                    setConnectionStatus(false, 'Mengisi 57 unit awal...');
+                    const batch = writeBatch(db);
+                    INITIAL_UNITS.forEach((unit) => {
+                        const slugId = unit.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(2, 6);
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'dt_units', slugId);
+                        batch.set(docRef, {
+                            name: unit.name,
+                            status: unit.status,
+                            note: unit.note || '',
+                            updatedAt: Date.now()
+                        });
+                    });
+                    await batch.commit();
+                    isSeeding = false;
+                }
+            } catch (seedErr) {
+                console.error("Seed check error:", seedErr);
+                isSeeding = false;
+            }
+
+            // Rule 2: Simple collection query tanpa orderBy/where kompleks, sort di memori JS
+            onSnapshot(unitsColRef, (snapshot) => {
+                const rawList = [];
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    rawList.push({
+                        id: docSnap.id,
+                        name: data.name || 'Unknown',
+                        status: data.status === 'BD' ? 'BD' : 'READY',
+                        note: data.note || ''
+                    });
+                });
+
+                unitsData = sortUnits(rawList);
+                setConnectionStatus(true, 'Online • Real-time Sync');
+                updateUI();
+            }, (error) => {
+                console.error("Snapshot error:", error);
+                setConnectionStatus(false, 'Koneksi terputus');
+            });
+        }
+
+        // Update Seluruh Tampilan UI
+        function updateUI() {
+            const total = unitsData.length;
+            const readyUnits = unitsData.filter(u => u.status === 'READY');
+            const bdUnits = unitsData.filter(u => u.status === 'BD');
+
+            document.getElementById('countTotal').textContent = total;
+            document.getElementById('countReady').textContent = readyUnits.length;
+            document.getElementById('countBD').textContent = bdUnits.length;
+
+            renderList();
+            updateCopyBoxes(readyUnits, bdUnits, total);
+        }
+
+        // Render Daftar Baris Compact
+        window.renderList = function() {
+            const container = document.getElementById('unitListContainer');
+            const searchInput = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('clearSearchBtn');
+            const query = searchInput.value.trim().toLowerCase();
+
+            if (query.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            const filtered = unitsData.filter(u => {
+                const matchStatus = filterStatus === 'ALL' || u.status === filterStatus;
+                const matchQuery = !query || 
+                    u.name.toLowerCase().includes(query) || 
+                    (u.note && u.note.toLowerCase().includes(query));
+                return matchStatus && matchQuery;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="py-10 px-4 text-center text-xs text-slate-400">
+                        <p class="font-medium text-slate-300">Tidak ada unit ditemukan</p>
+                        <p class="text-[11px] mt-0.5">Coba ubah kata kunci pencarian atau filter status.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            filtered.forEach((unit, idx) => {
+                const isReady = unit.status === 'READY';
+                const rowBg = isReady ? 'hover:bg-slate-800/40' : 'bg-rose-950/20 hover:bg-rose-950/35';
+                const numColor = isReady ? 'text-slate-500' : 'text-rose-400/80';
+                const nameColor = isReady ? 'text-slate-100' : 'text-rose-200';
+
+                html += `
+                <div class="grid grid-cols-12 items-center px-2.5 py-1.5 ${rowBg} transition-colors">
+                    <!-- Nomor Urut -->
+                    <div class="col-span-1 text-center text-[10.5px] font-mono ${numColor} tabular-nums select-none">
+                        ${idx + 1}
+                    </div>
+
+                    <!-- Nama Unit & Keterangan BD -->
+                    <div class="col-span-6 pl-1 pr-1 min-w-0">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="text-xs-compact font-bold ${nameColor} tracking-tight truncate">${escapeHtml(unit.name)}</span>
+                            ${!isReady ? `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9.5px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30 truncate max-w-full">${escapeHtml(unit.note || 'BD')}</span>` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Tombol Toggle Ready / Breakdown -->
+                    <div class="col-span-4 flex items-center justify-center gap-1">
+                        <button onclick="setUnitReady('${unit.id}')" 
+                            class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wide transition-all active:scale-95 ${
+                                isReady 
+                                ? 'bg-emerald-500 text-slate-950 shadow-xs ring-1 ring-emerald-400' 
+                                : 'bg-slate-800/90 text-slate-400 hover:text-emerald-300 border border-slate-700'
+                            }">
+                            Ready
+                        </button>
+                        <button onclick="openBdModal('${unit.id}')" 
+                            class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wide transition-all active:scale-95 ${
+                                !isReady 
+                                ? 'bg-rose-600 text-white shadow-xs ring-1 ring-rose-400' 
+                                : 'bg-slate-800/90 text-slate-400 hover:text-rose-300 border border-slate-700'
+                            }">
+                            BD
+                        </button>
+                    </div>
+
+                    <!-- Tombol Hapus -->
+                    <div class="col-span-1 flex justify-end">
+                        <button onclick="openDeleteModal('${unit.id}')" title="Hapus Unit" class="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-950/50 active:scale-90 transition-all">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        };
+
+        // Update Teks di Kolom Salin Clipboard
+        function updateCopyBoxes(readyUnits, bdUnits, total) {
+            document.getElementById('copyReadyCount').textContent = readyUnits.length;
+            document.getElementById('copyBdCount').textContent = bdUnits.length;
+
+            const readyLines = readyUnits.map((u, i) => `${i + 1}. ${u.name}`).join('\n');
+            const bdLines = bdUnits.map((u, i) => `${i + 1}. ${u.name}${u.note ? ' : ' + u.note : ''}`).join('\n');
+
+            const readyText = `*UNIT READY (${readyUnits.length}):*\n${readyLines || '-'}`;
+            const bdText = `*UNIT BREAKDOWN (${bdUnits.length}):*\n${bdLines || '-'}`;
+            const allText = `*LIST DT - SITE DBK*\nTotal: ${total} Unit (Ready: ${readyUnits.length} | BD: ${bdUnits.length})\n\n${readyText}\n\n${bdText}`;
+
+            document.getElementById('textReadyBox').value = readyText;
+            document.getElementById('textBdBox').value = bdText;
+            document.getElementById('textAllBox').value = allText;
+        }
+
+        // Fitur Copy to Clipboard (Kompatibel Iframe & Mobile)
+        window.copyReport = function(type) {
+            let textToCopy = '';
+            let label = '';
+
+            if (type === 'READY') {
+                textToCopy = document.getElementById('textReadyBox').value;
+                label = 'Daftar Unit Ready disalin!';
+            } else if (type === 'BD') {
+                textToCopy = document.getElementById('textBdBox').value;
+                label = 'Daftar Unit Breakdown disalin!';
+            } else {
+                textToCopy = document.getElementById('textAllBox').value;
+                label = 'Laporan lengkap berhasil disalin!';
+            }
+
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = textToCopy;
+            tempTextarea.style.position = 'fixed';
+            tempTextarea.style.left = '-9999px';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            tempTextarea.setSelectionRange(0, 99999);
+
+            try {
+                document.execCommand('copy');
+                showToast(label, 'success');
+            } catch (err) {
+                showToast('Gagal menyalin teks', 'error');
+            } finally {
+                document.body.removeChild(tempTextarea);
+            }
+        };
+
+        // Set Status Unit Menjadi READY
+        window.setUnitReady = async function(unitId) {
+            const unit = unitsData.find(u => u.id === unitId);
+            if (!unit || unit.status === 'READY') return;
+
+            if (db && currentUser) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'dt_units', unitId);
+                    await updateDoc(docRef, {
+                        status: 'READY',
+                        note: '',
+                        updatedAt: Date.now()
+                    });
+                    showToast(`${unit.name} diubah ke READY`, 'success');
+                } catch (err) {
+                    console.error("Update error:", err);
+                    showToast('Gagal memperbarui status', 'error');
+                }
+            } else {
+                unit.status = 'READY';
+                unit.note = '';
+                updateUI();
+                showToast(`${unit.name} diubah ke READY`, 'success');
+            }
+        };
+
+        // Modal Set Breakdown
+        window.openBdModal = function(unitId) {
+            const unit = unitsData.find(u => u.id === unitId);
+            if (!unit) return;
+
+            selectedUnitForBd = unit;
+            document.getElementById('bdModalUnitName').textContent = unit.name;
+            const input = document.getElementById('bdNoteInput');
+            input.value = unit.status === 'BD' ? (unit.note || '') : '';
+            document.getElementById('bdModal').classList.remove('hidden');
+            setTimeout(() => input.focus(), 50);
+        };
+
+        window.closeBdModal = function() {
+            selectedUnitForBd = null;
+            document.getElementById('bdModal').classList.add('hidden');
+        };
+
+        window.setQuickBdNote = function(text) {
+            const input = document.getElementById('bdNoteInput');
+            input.value = text;
+            input.focus();
+        };
+
+        window.confirmSetBreakdown = async function(e) {
+            e.preventDefault();
+            if (!selectedUnitForBd) return;
+
+            const note = document.getElementById('bdNoteInput').value.trim();
+            const unit = selectedUnitForBd;
+            closeBdModal();
+
+            if (db && currentUser) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'dt_units', unit.id);
+                    await updateDoc(docRef, {
+                        status: 'BD',
+                        note: note,
+                        updatedAt: Date.now()
+                    });
+                    showToast(`${unit.name} diset BREAKDOWN`, 'success');
+                } catch (err) {
+                    console.error("Set BD error:", err);
+                    showToast('Gagal menyimpan status BD', 'error');
+                }
+            } else {
+                unit.status = 'BD';
+                unit.note = note;
+                updateUI();
+                showToast(`${unit.name} diset BREAKDOWN`, 'success');
+            }
+        };
+
+        // Modal Tambah Unit Baru
+        window.openAddModal = function() {
+            document.getElementById('addUnitForm').reset();
+            document.getElementById('newNoteWrapper').classList.add('hidden');
+            document.getElementById('addModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('newUnitName').focus(), 50);
+        };
+
+        window.closeAddModal = function() {
+            document.getElementById('addModal').classList.add('hidden');
+        };
+
+        window.toggleNewNoteField = function() {
+            const status = document.querySelector('input[name="newUnitStatus"]:checked').value;
+            const wrapper = document.getElementById('newNoteWrapper');
+            const noteInput = document.getElementById('newUnitNote');
+            if (status === 'BD') {
+                wrapper.classList.remove('hidden');
+                noteInput.required = true;
+            } else {
+                wrapper.classList.add('hidden');
+                noteInput.required = false;
+            }
+        };
+
+        window.handleAddUnit = async function(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('newUnitName').value.trim();
+            if (!nameInput) return;
+
+            const status = document.querySelector('input[name="newUnitStatus"]:checked').value;
+            const note = status === 'BD' ? document.getElementById('newUnitNote').value.trim() : '';
+
+            // Cek duplikasi nama unit
+            const exists = unitsData.some(u => u.name.toLowerCase() === nameInput.toLowerCase());
+            if (exists) {
+                showToast(`Unit "${nameInput}" sudah ada di daftar!`, 'error');
+                return;
+            }
+
+            closeAddModal();
+
+            if (db && currentUser) {
+                try {
+                    const slugId = nameInput.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now().toString(36);
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'dt_units', slugId);
+                    await setDoc(docRef, {
+                        name: nameInput,
+                        status: status,
+                        note: note,
+                        updatedAt: Date.now()
+                    });
+                    showToast(`Unit ${nameInput} berhasil ditambahkan`, 'success');
+                } catch (err) {
+                    console.error("Add unit error:", err);
+                    showToast('Gagal menambahkan unit', 'error');
+                }
+            } else {
+                unitsData.push({
+                    id: 'local-' + Date.now(),
+                    name: nameInput,
+                    status: status,
+                    note: note
+                });
+                unitsData = sortUnits(unitsData);
+                updateUI();
+                showToast(`Unit ${nameInput} berhasil ditambahkan`, 'success');
+            }
+        };
+
+        // Modal Hapus Unit
+        window.openDeleteModal = function(unitId) {
+            const unit = unitsData.find(u => u.id === unitId);
+            if (!unit) return;
+            selectedUnitForDelete = unit;
+            document.getElementById('deleteModalUnitName').textContent = unit.name;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        };
+
+        window.closeDeleteModal = function() {
+            selectedUnitForDelete = null;
+            document.getElementById('deleteModal').classList.add('hidden');
+        };
+
+        window.confirmDeleteUnit = async function() {
+            if (!selectedUnitForDelete) return;
+            const unit = selectedUnitForDelete;
+            closeDeleteModal();
+
+            if (db && currentUser) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'dt_units', unit.id);
+                    await deleteDoc(docRef);
+                    showToast(`Unit ${unit.name} dihapus`, 'success');
+                } catch (err) {
+                    console.error("Delete error:", err);
+                    showToast('Gagal menghapus unit', 'error');
+                }
+            } else {
+                unitsData = unitsData.filter(u => u.id !== unit.id);
+                updateUI();
+                showToast(`Unit ${unit.name} dihapus`, 'success');
+            }
+        };
+
+        // Filter Status & Navigasi Tab
+        window.setFilterStatus = function(status) {
+            filterStatus = status;
+            ['ALL', 'READY', 'BD'].forEach(st => {
+                const card = document.getElementById('card-' + st);
+                if (st === status) {
+                    card.classList.add('ring-1', 'ring-amber-400');
+                } else {
+                    card.classList.remove('ring-1', 'ring-amber-400');
+                }
+            });
+            if (activeTab !== 'list') switchTab('list');
+            renderList();
+        };
+
+        window.switchTab = function(tab) {
+            activeTab = tab;
+            const viewList = document.getElementById('viewList');
+            const viewCopy = document.getElementById('viewCopy');
+            const btnList = document.getElementById('tabBtnList');
+            const btnCopy = document.getElementById('tabBtnCopy');
+            const bottomBar = document.getElementById('bottomQuickBar');
+
+            if (tab === 'list') {
+                viewList.classList.remove('hidden');
+                viewCopy.classList.add('hidden');
+                bottomBar.classList.remove('hidden');
+                btnList.className = 'px-2 py-1 rounded-md text-[11px] font-semibold bg-slate-800 text-amber-400 transition-all';
+                btnCopy.className = 'px-2 py-1 rounded-md text-[11px] font-semibold text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1';
+            } else {
+                viewList.classList.add('hidden');
+                viewCopy.classList.remove('hidden');
+                bottomBar.classList.add('hidden');
+                btnCopy.className = 'px-2 py-1 rounded-md text-[11px] font-semibold bg-slate-800 text-amber-400 transition-all flex items-center gap-1';
+                btnList.className = 'px-2 py-1 rounded-md text-[11px] font-semibold text-slate-400 hover:text-slate-200 transition-all';
+            }
+        };
+
+        window.clearSearch = function() {
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            renderList();
+            input.focus();
+        };
+
+        // Helper Escape HTML & Toast
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        let toastTimeout = null;
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = msg;
+            if (type === 'error') {
+                toastIcon.setAttribute('data-lucide', 'alert-circle');
+                toastIcon.className = 'w-3.5 h-3.5 text-rose-400';
+            } else {
+                toastIcon.setAttribute('data-lucide', 'check-circle');
+                toastIcon.className = 'w-3.5 h-3.5 text-emerald-400';
+            }
+            lucide.createIcons();
+
+            toast.classList.remove('opacity-0', '-translate-y-2');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', '-translate-y-2');
+            }, 2200);
+        }
+
+        // Jalankan saat halaman selesai dimuat
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
